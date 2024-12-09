@@ -79,64 +79,107 @@
       </div>
     </div>
     </div>
-    <!-- Modal para detalles de órden -->
+  
     
-    <div v-if="showDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold">Detalle de Orden</h3>
-          <button @click="showDetailModal = false" class="text-gray-500 hover:text-gray-700">×</button>
-        </div>
-        <!-- Contenido del detalle -->
-        <div v-if="selectedOrder" class="space-y-4">
-          <div class="flex justify-between border-b pb-4">
-            <div>
-              <p class="font-bold">Orden: {{ selectedOrder.order_number }}</p>
-              <p>Cliente: {{ selectedOrder.client_name }}</p>
-            </div>
-            <div class="text-right">
-              <p>Vencimiento: {{ formatDate(selectedOrder.due_date) }}</p>
-              <span :class="`px-2 rounded-full text-sm ${getStatusColor(selectedOrder.status)}`">
-                {{ selectedOrder.status }}
-              </span>
-            </div>
-          </div>
+    <!-- Modal para detalles de órden con impresión -->
+<div v-if="showDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4 print:hidden">
+      <h3 class="text-lg font-bold">Detalle de Orden</h3>
+      <div class="flex gap-2">
+        <button @click="printOrderDetail" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          <PrinterIcon class="h-5 w-5" />
+        </button>
+        <button @click="showDetailModal = false" class="text-gray-500 hover:text-gray-700">×</button>
+      </div>
+    </div>
 
-          <table class="min-w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left">Artículo</th>
-                  <th class="px-4 py-2 text-left">Proveedor</th>
-                  <th class="px-4 py-2 text-left">FC Proveedor</th>
-                  <th class="px-4 py-2 text-right">Cantidad</th>
-                  <th class="px-4 py-2 text-right">Precio Unit.</th>
-                  <th class="px-4 py-2 text-right">Subtotal</th>
-                  <th class="px-4 py-2 text-right">IVA</th>
-                  <th class="px-4 py-2 text-right">Total</th>
-                  </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in selectedOrder.items" :key="item.id" class="border-b">
-                <td class="px-4 py-2">{{ item.details }}</td>
-                <td class="px-4 py-2">{{ item.provider_name }}</td>
-                <td class="px-4 py-2">{{ item.provider_invoice }}</td>
-                <td class="px-4 py-2 text-right">{{ item.quantity }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(item.unit_price) }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(item.subtotal) }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(item.iva) }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(item.total) }}</td>
-              </tr>
-              <tr class="bg-gray-50 font-bold">
-                <td colspan="5" class="px-4 py-2 text-right">Totales:</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(orderSubtotal) }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(orderIva) }}</td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(orderTotal) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div> 
-      </div>                 
-    </div> 
+    <!-- Contenido del detalle (área imprimible) -->
+    <div v-if="selectedOrder" class="space-y-4" id="printableArea">
+      <!-- Encabezado con logo -->
+      <div class="flex justify-between items-start border-b pb-4">
+        <div class="flex items-center gap-4">
+          <img src="/logo.png" alt="Logo" class="h-16 w-auto" />
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Branzon Tech S.A.S</h2>
+            <p class="text-sm text-gray-600">NIT: 901729846-2</p>
+            <p class="text-sm text-gray-600">Conjunto Guanabara</p>
+            <p class="text-sm text-gray-600">Teléfono: 3168777719</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-lg">{{ selectedOrder.order_number }}</p>
+          <p class="text-sm text-gray-600">Fecha: {{ formatDate(new Date()) }}</p>
+          <p class="text-sm text-gray-600">Vencimiento: {{ formatDate(selectedOrder.due_date) }}</p>
+          <span :class="`px-2 rounded-full text-sm ${getStatusColor(selectedOrder.status)}`">
+            {{ selectedOrder.status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Información del cliente en OrderList.vue -->
+      <div class="bg-gray-50 p-4 rounded">
+        <h3 class="font-semibold mb-2">Información del Cliente</h3>
+        <p><span class="font-medium">Cliente:</span> {{ selectedOrder.client_name }}</p>
+        <p v-if="selectedOrder.client_document_type">
+          <span class="font-medium">{{ selectedOrder.client_document_type }}:</span> 
+          {{ selectedOrder.client_document_number }}
+        </p>
+      </div>
+      
+
+      <!-- Tabla de artículos -->
+      <table class="min-w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left">Artículo</th>
+            <th class="px-4 py-2 text-left">Proveedor</th>
+            <th class="px-4 py-2 text-left">FC Proveedor</th>
+            <th class="px-4 py-2 text-right">Cantidad</th>
+            <th class="px-4 py-2 text-right">Precio Unit.</th>
+            <th class="px-4 py-2 text-right">Subtotal</th>
+            <th class="px-4 py-2 text-right">IVA</th>
+            <th class="px-4 py-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in selectedOrder.items" :key="item.id" class="border-b">
+            <td class="px-4 py-2">{{ item.details }}</td>
+            <td class="px-4 py-2">{{ item.provider_name }}</td>
+            <td class="px-4 py-2">{{ item.provider_invoice }}</td>
+            <td class="px-4 py-2 text-right">{{ item.quantity }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(item.unit_price) }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(item.subtotal) }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(item.iva) }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(item.total) }}</td>
+          </tr>
+          <tr class="bg-gray-50 font-bold">
+            <td colspan="5" class="px-4 py-2 text-right">Totales:</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(orderSubtotal) }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(orderIva) }}</td>
+            <td class="px-4 py-2 text-right">{{ formatCurrency(orderTotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pie de página -->
+      <div class="mt-8 text-sm text-gray-600 border-t pt-4">
+        <p class="mb-2">Observaciones:</p>
+        <p class="mb-4">Esta orden está sujeta a los términos y condiciones acordados.</p>
+        <div class="flex justify-between mt-8">
+          <div>
+            <div class="border-t border-gray-400 w-48 mt-16"></div>
+            <p class="mt-2">Firma Autorizada</p>
+          </div>
+          <div>
+            <div class="border-t border-gray-400 w-48 mt-16"></div>
+            <p class="mt-2">Recibido</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     
     
@@ -215,7 +258,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-import { EyeIcon, FileIcon, PencilIcon } from 'lucide-vue-next';
+import { EyeIcon, FileIcon, PencilIcon, PrinterIcon } from 'lucide-vue-next';
 
 
 export default {
@@ -223,7 +266,8 @@ export default {
   components: {
     EyeIcon,
     FileIcon,
-    PencilIcon
+    PencilIcon,
+    PrinterIcon
   },
   // Estados para manejo de órdenes y UI
 
@@ -255,7 +299,9 @@ export default {
       'Cantidad', 'Subtotal', 'IVA', 'Total', 'Proveedor',
       'FC Proveedor', 'Vencimiento', 'Estado'
     ];
-
+    const printOrderDetail = () =>{
+      window.print; 
+    }
     // Cargar todas las órdenes
     const fetchOrders = async () => {
       try {
@@ -277,16 +323,17 @@ export default {
 
     
     const showOrderDetail = async (order) => {
-        try {
-          console.log('Consultando detalles de orden:', order.id);
-          const response = await axios.get(`http://localhost:3001/orders/${order.id}`);
-          selectedOrder.value = response.data;
-          showDetailModal.value = true;
-        } catch (error) {
-          console.error('Error al obtener detalles:', error);
-          showAlert('Error al cargar detalles de la orden');
-        }
-      };
+      try {
+        console.log('Consultando detalles de orden:', order.id);
+        const response = await axios.get(`http://localhost:3001/orders/${order.id}`);
+        console.log('Datos recibidos del servidor:', response.data);
+        selectedOrder.value = response.data;
+        showDetailModal.value = true;
+      } catch (error) {
+        console.error('Error al obtener detalles:', error);
+        showAlert('Error al cargar detalles de la orden');
+      }
+    };
 
 
     // Mostrar archivos de una orden
@@ -412,6 +459,8 @@ export default {
       orderSubtotal,
       orderIva,
       orderTotal,
+      printOrderDetail,
+      showAlert
     };
   }
 };

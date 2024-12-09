@@ -525,22 +525,24 @@ app.get('/orders/:id', async (req, res) => {
   console.log('Consultando orden ID:', req.params.id);
   
   try {
-    // Obtener datos base de la orden
     const [orders] = await connection.promise().query(`
       SELECT 
         o.*,
-        c.name as client_name
+        c.name as client_name,
+        c.document_type as client_document_type,
+        c.document_number as client_document_number,
+        p.name as provider_name
       FROM orders o
       LEFT JOIN clients c ON o.client_id = c.id
+      LEFT JOIN providers p ON o.provider_id = p.id
       WHERE o.id = ?
     `, [req.params.id]);
 
     if (!orders.length) {
-      console.log('No se encontró la orden');
       return res.status(404).json({ error: 'Orden no encontrada' });
     }
 
-    // Obtener todos los artículos de la orden con sus proveedores
+    // Obtener todos los artículos de la orden
     const [items] = await connection.promise().query(`
       SELECT 
         oi.*,
@@ -550,12 +552,14 @@ app.get('/orders/:id', async (req, res) => {
       WHERE oi.order_id = ?
     `, [req.params.id]);
 
-    console.log('Items encontrados:', items);
-
-    // Estructurar la respuesta
-    const order = orders[0];
+    // Estructurar la respuesta incluyendo los datos del cliente
     const formattedOrder = {
-      ...order,
+      ...orders[0],
+      client_info: {
+        name: orders[0].client_name,
+        document_type: orders[0].client_document_type,
+        document_number: orders[0].client_document_number
+      },
       items: items.map(item => ({
         id: item.id,
         details: item.details,
