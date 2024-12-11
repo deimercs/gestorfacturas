@@ -290,7 +290,10 @@ app.post('/providers', async (req, res) => {
 // En server.js, modificar el endpoint GET /orders
 app.get('/orders', async (req, res) => {
   try {
-    const [orders] = await connection.promise().query(`
+    const { startDate, endDate } = req.query;
+    console.log('Backend - Recibido request con fechas:', { startDate, endDate });
+    
+    let query = `
       SELECT 
         o.*,
         c.name as client_name,
@@ -298,12 +301,26 @@ app.get('/orders', async (req, res) => {
       FROM orders o
       LEFT JOIN clients c ON o.client_id = c.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
-      GROUP BY o.id
-      ORDER BY o.created_at DESC
-    `);
+    `;
     
-    console.log('Órdenes obtenidas:', orders);
-
+    const queryParams = [];
+    
+    if (startDate && endDate) {
+      // Cambiamos el WHERE para buscar en un rango de fechas
+      query += ` WHERE DATE(o.created_at) BETWEEN DATE(?) AND DATE(?)`;
+      queryParams.push(startDate, endDate);
+      
+      console.log('Backend - Query SQL:', query);
+      console.log('Backend - Parámetros:', queryParams);
+    }
+    
+    query += ` GROUP BY o.id ORDER BY o.created_at DESC`;
+    
+    console.log('Backend - Query final:', query);
+    
+    const [orders] = await connection.promise().query(query, queryParams);
+    console.log('Backend - Órdenes encontradas:', orders.length);
+    
     const formattedOrders = orders.map(order => ({
       ...order,
       items: [{
@@ -319,14 +336,13 @@ app.get('/orders', async (req, res) => {
       }]
     }));
 
-    console.log('Órdenes formateadas:', formattedOrders);
+    console.log('Backend - Enviando respuesta con', formattedOrders.length, 'órdenes');
     res.json(formattedOrders);
   } catch (error) {
-    console.error('Error SQL:', error);
+    console.error('Backend - Error SQL:', error);
     res.status(500).json({ error: 'Error al obtener órdenes' });
   }
 });
-
 // Endpoints de Órdenes
 // app.get('/orders', async (req, res) => {
 //   try {
