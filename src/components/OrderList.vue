@@ -277,7 +277,42 @@
         </div>
 
         <!-- Tabla de artículos -->
+
         <table class="min-w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left">Artículo</th>
+                <th class="px-4 py-2 text-left">Proveedor</th>
+                <th class="px-4 py-2 text-left">FC Proveedor</th>
+                <th class="px-4 py-2 text-right">Cantidad</th>
+                <th class="px-4 py-2 text-right">Precio Unit.</th>
+                <th class="px-4 py-2 text-right">Subtotal</th>
+                <th class="px-4 py-2 text-right">IVA</th>
+                <th class="px-4 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in selectedOrder.items" :key="item.id" class="border-b">
+                <td class="px-4 py-2">{{ item.details }}</td>
+                <td class="px-4 py-2">{{ item.provider_name }}</td>
+                <td class="px-4 py-2">{{ item.provider_invoice }}</td>
+                <td class="px-4 py-2 text-right">{{ item.quantity }}</td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(item.unit_price) }}</td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(item.subtotal) }}</td>
+                <td class="px-4 py-2 text-right">
+                  {{ item.noIva ? 'No Aplica' : formatCurrency(item.iva) }}
+                </td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(item.total) }}</td>
+              </tr>
+              <tr class="bg-gray-50 font-bold">
+                <td colspan="5" class="px-4 py-2 text-right">Totales:</td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(orderSubtotal) }}</td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(orderIva) }}</td>
+                <td class="px-4 py-2 text-right">{{ formatCurrency(orderTotal) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        <!-- <table class="min-w-full">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-2 text-left">Artículo</th>
@@ -326,7 +361,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table> -->
 
         <!-- Pie de página -->
         <div class="mt-8 text-sm text-gray-600 border-t pt-4">
@@ -507,26 +542,20 @@ export default {
 
     const orderSubtotal = computed(
       () =>
-        selectedOrder.value?.items?.reduce(
-          (sum, item) => sum + Number(item.subtotal),
-          0
-        ) || 0
+      selectedOrder.value?.items?.reduce((sum, item) => sum + Number(item.subtotal), 0) || 0
     );
 
     const orderIva = computed(
       () =>
-        selectedOrder.value?.items?.reduce(
-          (sum, item) => sum + Number(item.iva),
-          0
-        ) || 0
+      selectedOrder.value?.items?.reduce((sum, item) => {
+        // Si el item tiene noIva, suma 0, si no, suma el IVA
+        return sum + (item.noIva ? 0 : Number(item.iva));
+      }, 0) || 0
     );
 
     const orderTotal = computed(
       () =>
-        selectedOrder.value?.items?.reduce(
-          (sum, item) => sum + Number(item.total),
-          0
-        ) || 0
+        selectedOrder.value?.items?.reduce((sum, item) => sum + Number(item.total), 0) || 0
     );
 
     const printOrderDetail = () => {

@@ -24,6 +24,13 @@ const routes = [
     meta: { requiresAuth: true } // Agregada la meta de autenticación
   },
   {
+    path: '/orders/edit/:id',
+    name: 'OrderEdit',
+    component: OrderForm,
+    meta: { requiresAuth: true }
+  },
+
+  {
     path: '/',
     redirect: '/orders'
   },
