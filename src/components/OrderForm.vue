@@ -339,17 +339,25 @@ export default {
       selectedFiles.value.splice(index, 1);
     };
 
-    // Agregar función para eliminar archivos existentes
+    // Función para eliminar archivo existente
+
     const removeExistingFile = async (fileId) => {
-      try {
-        await axios.delete(`http://localhost:3001/files/${fileId}`);
-        existingFiles.value = existingFiles.value.filter(f => f.id !== fileId);
-        showAlert('Archivo eliminado exitosamente', 'success');
-      } catch (error) {
-        console.error('Error al eliminar archivo:', error);
-        showAlert('Error al eliminar el archivo', 'error');
-      }
-    };
+  try {
+    console.log('Intentando eliminar archivo con ID:', fileId);
+    
+    if (!fileId) {
+      console.error('ID de archivo inválido');
+      return;
+    }
+
+    await axios.delete(`http://localhost:3001/files/${fileId}`);
+    existingFiles.value = existingFiles.value.filter(f => f.id !== fileId);
+    showAlert('Archivo eliminado correctamente', 'success');
+  } catch (error) {
+    console.error('Error al eliminar archivo:', error);
+    showAlert('Error al eliminar el archivo', 'error');
+  }
+};
 
     // Funciones para búsqueda de cliente
     const searchClients = async () => {
@@ -411,19 +419,18 @@ export default {
 
     // En OrderForm.vue, mejorar la función showAlert:
     const showAlert = (message, type = 'error') => {
-      alert.value = {
-        message,
-        type,
-        timestamp: Date.now()
-      };
-      
-      // Auto-ocultar después de 5 segundos
-      setTimeout(() => {
-        if (alert.value?.timestamp === Date.now()) {
-          alert.value = null;
-        }
-      }, 5000);
-    };
+  alert.value = {
+    message,
+    type,
+    timestamp: Date.now()
+  };
+  
+  setTimeout(() => {
+    if (alert.value?.timestamp === Date.now()) {
+      alert.value = null;
+    }
+  }, 3000);
+};
 
     // Funciones de formulario
     const resetForm = () => {

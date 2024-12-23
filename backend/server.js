@@ -557,119 +557,7 @@ app.post("/orders", upload.array("files"), async (req, res) => {
   }
 });
 
-// En server.js, reemplaza todo el endpoint PUT "/orders/:id"
-app.put("/orders/:id", upload.array("files"), async (req, res) => {
-  let connection = null;
-  try {
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-    }).promise();
-
-    const orderId = req.params.id;
-    let orderData;
-    
-    // Verificar cómo vienen los datos y parsearlos adecuadamente
-    try {
-      orderData = typeof req.body.orderData === 'string' 
-        ? JSON.parse(req.body.orderData)
-        : req.body;
-      
-      console.log('Datos parseados:', orderData);
-    } catch (error) {
-      console.error('Error al parsear datos:', error);
-      orderData = req.body;
-    }
-
-    if (!orderData || !Array.isArray(orderData.articles)) {
-      throw new Error('Formato de datos inválido');
-    }
-
-    await connection.beginTransaction();
-
-    // 1. Actualizar orden principal
-    const updateOrderQuery = `
-      UPDATE orders 
-      SET document_type = ?,
-          client_id = ?,
-          provider_id = ?,
-          details = ?,
-          subtotal = ?,
-          iva = ?,
-          total = ?,
-          provider_invoice = ?,
-          due_date = ?,
-          status = ?
-      WHERE id = ?`;
-
-    const updateOrderParams = [
-      orderData.document_type,
-      orderData.client_id,
-      orderData.provider_id,
-      orderData.details,
-      orderData.subtotal,
-      orderData.iva,
-      orderData.total,
-      orderData.provider_invoice,
-      orderData.due_date,
-      orderData.status,
-      orderId
-    ];
-
-    await connection.query(updateOrderQuery, updateOrderParams);
-
-    // 2. Eliminar items existentes
-    await connection.query('DELETE FROM order_items WHERE order_id = ?', [orderId]);
-
-    // 3. Insertar nuevos items
-    for (const article of orderData.articles) {
-      const insertItemQuery = `
-        INSERT INTO order_items 
-        (order_id, provider_id, details, quantity, unit_price, subtotal, iva, total, provider_invoice)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-      const insertItemParams = [
-        orderId,
-        article.providerId,
-        article.description,
-        article.quantity,
-        article.unitPrice,
-        article.subtotal,
-        article.iva,
-        article.total,
-        orderData.provider_invoice
-      ];
-
-      await connection.query(insertItemQuery, insertItemParams);
-    }
-
-    // Confirmar transacción
-    await connection.commit();
-
-    res.json({
-      success: true,
-      message: 'Orden actualizada exitosamente'
-    });
-
-  } catch (error) {
-    console.error('Error en actualización:', error);
-    
-    if (connection) {
-      await connection.rollback();
-    }
-    
-    res.status(500).json({
-      error: 'Error al actualizar la orden',
-      details: error.message
-    });
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
-  }
-});
+// Endpoint para obtener archivos de una orden
 app.get("/orders/:id/files", async (req, res) => {
   try {
     const [files] = await connection
@@ -788,6 +676,49 @@ app.put("/orders/:id", upload.array("files"), async (req, res) => {
       error: 'Error al actualizar la orden',
       details: error.message
     });
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+});
+
+// Endpoint para eliminar archivo
+app.delete("/files/:id", async (req, res) => {
+  let connection;
+  try {
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    }).promise();
+
+    // 1. Obtener información del archivo
+    const [files] = await connection.query(
+      "SELECT * FROM order_files WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (!files.length) {
+      return res.status(404).json({ error: "Archivo no encontrado" });
+    }
+
+    const file = files[0];
+
+    // 2. Eliminar el archivo físico
+    const filePath = path.join(__dirname, file.file_path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 3. Eliminar el registro de la base de datos
+    await connection.query("DELETE FROM order_files WHERE id = ?", [req.params.id]);
+
+    res.json({ success: true, message: "Archivo eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al eliminar archivo:", error);
+    res.status(500).json({ error: "Error al eliminar el archivo" });
   } finally {
     if (connection) {
       await connection.end();

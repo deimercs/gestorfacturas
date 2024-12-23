@@ -24,8 +24,12 @@
     emits: ['remove'],
     setup(props, { emit }) {
       const removeFile = (index) => {
-        emit('remove', index);
-      };
+  if (props.files[index].id) {  // Verifica si el archivo tiene ID
+    emit('remove', props.files[index].id);
+  } else {
+    emit('remove', index);
+  }
+};
   
       return {
         removeFile
