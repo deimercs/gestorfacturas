@@ -108,7 +108,7 @@ export default {
       errors.value = {};
 
       try {
-        const response = await axios.post('http://localhost:3001/login', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {// const response = await axios.post('http://localhost:3001/login', { 
           email: email.value,
           password: password.value
         });
