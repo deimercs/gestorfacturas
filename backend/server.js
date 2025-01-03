@@ -23,7 +23,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // 4. Configuración CORS
 app.use(
   cors({
-    origin: ["http://localhost:8080", "http://localhost:5173"],
+    origin: '*',
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -58,11 +58,49 @@ app.use((req, res, next) => {
 });
 
 // 6. Configuración de base de datos
-const connection = mysql.createConnection({
+// const connection = mysql.createConnection({
+//   host: process.env.DB_HOST,
+//   user: process.env.DB_USER,
+//   password: process.env.DB_PASSWORD,
+//   database: process.env.DB_NAME,
+//   ssl: {
+//     rejectUnauthorized: false
+//   }
+// });
+
+const connection = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  waitForConnections: true,
+  connectionLimit: 5,
+  maxIdle: 5,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
+});
+
+// Error handler
+connection.on('connection', (conn) => {
+  conn.on('error', (err) => {
+    console.error('Error de conexión:', err);
+  });
+});
+
+connection.promise().query('SELECT 1')
+  .then(() => console.log('Conexión exitosa'))
+  .catch(err => console.error('Error:', err));
+
+connection.on('error', (err) => {
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.error('Database connection lost');
+  }
+  if (err.code === 'ECONNRESET') {
+    console.error('Database connection reset');
+  }
 });
 
 // 7. Configuración de Multer
@@ -281,7 +319,7 @@ app.get("/files/:id", async (req, res) => {
 });
 
 // 10. Endpoints principales
-// Login endpoint
+//Login endpoint
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   connection.query(
@@ -297,6 +335,8 @@ app.post("/login", (req, res) => {
     }
   );
 });
+
+
 
 // Endpoints de Clientes
 app.get("/clients", async (req, res) => {

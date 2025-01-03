@@ -1,0 +1,6 @@
+DB_HOST=localhost
+DB_USER=app_factu
+DB_PASSWORD=Colombia58@/*.0
+DB_NAME=app_facturas
+UNSPLASH_API_KEY=Y3CZei70Ou7tBJh3KIegKL6sWjdRkkb2p7l2yoo7nLA
+VITE_UNSPLASH_API_KEY= 681288
