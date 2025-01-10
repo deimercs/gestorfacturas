@@ -1,27 +1,15 @@
 version: '3.8'
+
 services:
-  frontend:
+  app:
     build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - backend
-  
-  backend:
-    build: ./backend
     ports:
       - "3001:3001"
     environment:
-      - DB_HOST=db
-    depends_on:
-      - db
-
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_DATABASE: db_development
+      - DB_HOST=srv881.hstgr.io
+      - DB_USER=u660141438_app_factu
+      - DB_PASSWORD=Colombia5@
+      - DB_NAME=u660141438_app_facturas
     volumes:
-      - mysql_data:/var/lib/mysql
-
-volumes:
-  mysql_data:
+      - ./uploads:/usr/src/app/uploads
+    restart: unless-stopped
