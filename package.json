@@ -24,6 +24,7 @@
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "assert": "^2.1.0",
     "autoprefixer": "^10.4.20",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
@@ -55,7 +56,6 @@
   "browserslist": [
     "> 1%",
     "last 2 versions",
-    "not dead",
-    "not ie 11"
+    "not dead"
   ]
 }
