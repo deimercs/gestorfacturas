@@ -102,27 +102,29 @@ export default {
     };
 
     const handleLogin = async () => {
-      if (!validateForm() || isLoading.value) return;
-      
-      isLoading.value = true;
-      errors.value = {};
+  if (!validateForm() || isLoading.value) return;
+  
+  isLoading.value = true;
+  errors.value = {};
 
-      try {
-        const response = await axios.post('http://localhost:3001/login', {
-          email: email.value,
-          password: password.value
-        });
+  try {
+    // Usar la variable de entorno o un fallback
+    const baseURL = import.meta.env.VITE_API_URL || 'http://89.116.225.144/api';
+    const response = await axios.post(`${baseURL}/login`, {
+      email: email.value,
+      password: password.value
+    });
 
-        const { user } = response.data;
-        authService.login(user, 'dummy-token');
-        router.push('/orders');
-      } catch (error) {
-        console.error('Error login:', error);
-        errors.value.general = 'Credenciales inválidas';
-      } finally {
-        isLoading.value = false;
-      }
-    };
+    const { user } = response.data;
+    authService.login(user, 'dummy-token');
+    router.push('/orders');
+  } catch (error) {
+    console.error('Error login:', error);
+    errors.value.general = 'Credenciales inválidas';
+  } finally {
+    isLoading.value = false;
+  }
+};
 
     const updateBackground = () => {
       fadeIntervalId = setInterval(() => {
