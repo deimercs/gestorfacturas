@@ -1,11 +1,24 @@
 const { defineConfig } = require('@vue/cli-service')
+const webpack = require('webpack')
+
 module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
-    devServer: {
-      allowedHosts: ['.onrender.com'], // ¡Esta es la línea clave!
-      // O, si prefieres una opción menos segura (solo para pruebas en Render, NO para producción real):
-      // allowedHosts: 'all',
+    resolve: {
+      fallback: {
+        http: require.resolve('stream-http'),
+        https: require.resolve('https-browserify'),
+        util: require.resolve('util/'),
+        url: require.resolve('url/'),
+        stream: require.resolve('stream-browserify'),
+        zlib: require.resolve('browserify-zlib')
+      }
     },
-  },
-});
+    plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer']
+      })
+    ]
+  }
+})
